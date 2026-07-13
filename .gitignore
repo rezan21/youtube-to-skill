@@ -1,0 +1,13 @@
+local_dev/
+
+# macOS
+.DS_Store
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Editor / OS cruft
+*.log
+.env
+.env.*
