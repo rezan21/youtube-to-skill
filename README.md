@@ -58,6 +58,22 @@ npx skills add rezan21/y2s
 > The CLI discovers the meta-skill under `skills/y2s/`. If your version doesn't
 > auto-find it, point at the subpath: `npx skills add -g rezan21/y2s/skills/y2s`.
 
+> **See `"✗ y2s → <agent>: <agent> does not support global skill installation"`?**
+> That's expected and harmless — it means one specific detected agent (e.g.
+> PromptScript) doesn't support global-scope skills, so the installer skips it while
+> still installing to everything else. Look for `Done!` at the end to confirm the
+> run finished; `/y2s` will work in every agent that didn't report that error.
+>
+> To avoid the message entirely, name only the agents you want with `-a`/`--agent`
+> instead of letting the CLI auto-detect every agent on your machine:
+>
+> ```bash
+> npx skills add -g rezan21/y2s --agent claude-code cursor
+> ```
+>
+> This still writes the canonical copy that "universal" agents read directly, and
+> only skips the incompatible one instead of attempting and reporting on it.
+
 ## Usage
 
 Run these from inside any of your agents.
@@ -65,6 +81,7 @@ Run these from inside any of your agents.
 ### Generate a skill based on the YouTube Video
 
 Pass a YouTube URL to `/y2s`. e.g.:
+
 ```
 /y2s https://www.youtube.com/watch?v=Lsut4TCfygw
 ```
@@ -160,7 +177,7 @@ meta-skill.
 
 - **Needs captions.** Videos with no caption track can't be processed.
 - **No speaker diarization.** Captions carry no speaker labels, so podcast/interview
-  attribution is *inferred* from context and marked as such.
+  attribution is _inferred_ from context and marked as such.
 - **Auto-caption quality varies.** Accents and dense jargon degrade auto-generated
   tracks; the transcript header discloses the tier used.
 - **Model-dependent quality.** Distillation is done by whatever model your agent runs.

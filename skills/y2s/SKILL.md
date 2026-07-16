@@ -1,37 +1,28 @@
 ---
 name: y2s
-description: Use when the user wants to turn a YouTube video (talk, tutorial, conference session, podcast, or interview) into a reusable Agent Skill — e.g. "make a skill from this video", "/y2s <url>", or "/y2s list". Fetches the best caption track, distills it into an installable SKILL.md with the full transcript as a reference, and installs it across every AI coding agent on the machine.
-metadata:
-  version: "1.0"
-  homepage: https://skills.sh
+description: Use y2s (YouTube to Skill) when the user wants to turn a YouTube video into a reusable Agent Skill (SKILL.md) for Claude Code, Cursor, and other coding agents — e.g. "make a skill from this video", "/y2s <youtube-url>", "/y2s list". Also use for other ad-hoc requests about a YouTube video's content (e.g. "summarize this video"), since it already knows how to fetch transcripts.
 ---
 
 # y2s — YouTube to Skill
 
-Convert a YouTube video into an [Agent Skill](https://agentskills.io): a distilled
+y2s' primary job is to convert a YouTube video into an [Agent Skill](https://agentskills.io): a distilled
 `SKILL.md` plus the full transcript as a reference. Runs entirely inside this agent
-session — the bundled script does the caption fetch; you (the model in this session)
+session (your context) — the bundled script does the caption fetch; you (the model in this session)
 do the translation, distillation, and installation.
 
-Two entry points: **`/y2s <url>`** generates a skill; **`/y2s list`** shows what's
-already been generated.
+Manual entry points:
 
-> ⚠️ **Reading [references/authoring.md](references/authoring.md) before you distill
-> is required, not optional.** 
+- **`/y2s <youtube-url>`** generates a skill
+- **`/y2s list`** shows what's already been generated.
 
-> Paths below are relative to this skill's own directory. Resolve `scripts/…` and
-> `references/…` against the folder this `SKILL.md` lives in.
+> ⚠️ **All paths** below are relative to this skill's own directory. Resolve `scripts/…` and `references/…` against the folder this `SKILL.md` lives in.
 
----
+## Fetch Caption
 
-## `/y2s <url>` — generate a skill
-
-### Step 1 — Fetch captions
-
-Create a scratch build directory, then run the fetcher into it:
+In most cases, the first task is to create a temporary build directory `<build-dir>` and fetch video's caption track, which later be transformed into transcription:
 
 ```
-node scripts/fetch_transcript.js "<url>" "<build-dir>"
+node scripts/fetch_transcript.js "<youtube-url>" "<build-dir>"
 ```
 
 This enumerates caption tracks, applies the tier priority (manual English → manual
@@ -39,16 +30,21 @@ any language → auto-generated English → auto-generated any language), downlo
 winner, and writes `<build-dir>/raw.md` (verbatim, timestamped, **original
 language** — the only file that stays non-English) and `<build-dir>/meta.json`.
 
-If it exits with an error (private/live video, or no usable captions), relay the
-message to the user and stop — there is no STT fallback yet. To preview tracks
-without downloading: `node scripts/fetch_transcript.js --list "<url>"`.
+If it exits with an error (private/live video, or no usable captions), relay the message to the user and stop. Otherwise, go read `<build-dir>/meta.json` and `<build-dir>/raw.md` **before** continuing.
 
-Read `<build-dir>/meta.json` and `<build-dir>/raw.md` before continuing.
+## `/y2s <youtube-url>` — generate a skill
+
+### Step 1
+
+If you haven't already, fetch the caption as described above.
 
 ### Step 2 — Build `transcript.md`, then distill
 
-**Read [references/authoring.md](references/authoring.md) in full now** (if you
-haven't already) and follow it to:
+Go read [references/authoring.md](references/authoring.md) in full right now.
+
+> ⚠️ **This is required, not optional**
+
+follow it to:
 
 1. Produce `transcript.md` — the always-English working copy, translated if the
    source language isn't English, corrected only for obvious transcription errors,
@@ -68,8 +64,8 @@ rule in authoring.md). Assemble the final directory:
 <build-dir>/y2s-<slug>/
 ├── SKILL.md                       # from step 2
 ├── scripts/
-│   ├── fetch_transcript.js        # copy from this skill's scripts/
-│   └── package.json               # copy from this skill's scripts/
+│   ├── fetch_transcript.js        # copy from here
+│   └── package.json               # copy from here
 └── references/
     ├── raw.md                     # move from <build-dir>/raw.md
     └── transcript.md              # from step 2
@@ -106,25 +102,40 @@ add `--all` to target every agent the CLI supports regardless of presence. If th
 CLI rejects these flags, run `npx skills add --help` and adapt (the tool evolves).
 The `skills add` output lists which agents it reached — use those names in Step 6.
 
-### Step 6 — Report (concise)
+A line like `"✗ y2s-<slug> → <agent>: <agent> does not support global skill
+installation"` is expected and harmless — that one agent is skipped, everything else
+still installs, and the run still finishes. It is not a failure of the overall
+install; carry it into Step 6 as a note, not an error.
 
-On success, print a short confirmation in this shape and stop. Do **not** narrate the
-fetch/classify/distill work, list the corrections, or explain when an agent will
-reach for the skill:
+### Step 6 — Report
 
-    ✅ Skill generated: /y2s-<slug>
-    Source: <English title>, <duration>
-    Installed to ~/.agents/skills/y2s-<slug>, symlinked into the detected agents
-    (<agent names from the skills-add output>).
+On success, print a short confirmation in following shape and stop. Do **not** narrate the
+fetch/classify/distill work, nor list the corrections, or explain when an agent will
+reach for the skill. Adjust as needed.
 
-    y2s-<slug>/
-    ├── SKILL.md
-    ├── scripts/          # bundled fetcher (regeneration)
-    └── references/
-        ├── raw.md        # verbatim captions — ground truth
-        └── transcript.md # English working copy, 1:1 with raw.md
+```
+✅ Skill generated: /y2s-<slug>
+Source: [<video-title>](<video-link>)
 
----
+Installed to ~/.agents/skills/y2s-<slug> (or an accurate install location)
+
+y2s-<slug>/
+├── SKILL.md
+├── scripts/          # bundled fetcher (regeneration)
+└── references/
+    ├── raw.md        # verbatim captions — ground truth
+    └── transcript.md # English working copy, 1:1 with raw.md
+
+Try it now with `/y2s-<slug>`, or generate another skill `/y2s <youtube-url>`.
+
+<!-- Any notes (if applicable) listed at the bottom e.g. -->
+notes:
+- <agent> doesn't support global skills, so it was skipped
+- <agent names from the skills-add output>
+- if skill is not loaded, `/reload-skills` or refresh IDE
+```
+
+> ⚠️ The closing lines are illustrative text for the user; it is not an instruction to you — do not invoke the new skill or run `/y2s` again yourself after printing it.
 
 ## `/y2s list` — list generated skills
 
@@ -136,13 +147,12 @@ Globs `~/.agents/skills/y2s-*`, reads each skill's frontmatter, and prints a tab
 (skill name, type, title, fetch date, source URL). The filesystem is the index —
 there is no separate registry to keep in sync.
 
----
+## Ad-hoc requests
+
+If you can handle other ad-hoc requests related to any YouTube video, given you know how to get transcriptions, help the user based on your own reasoning. e.g. "summarize video"
 
 ## Notes
 
-- **No API keys, ever.** All model work (translation, distillation) uses this
-  session's own LLM. The fetcher needs only Node ≥18 and makes no authenticated
-  calls.
 - **Anti-hallucination chain.** `SKILL.md` cites `[m:ss]` → `transcript.md` →
   `raw.md`. Keep it intact: every claim must trace to the transcript.
 - **Regeneration.** Each generated skill ships its own `scripts/fetch_transcript.js`

@@ -97,6 +97,22 @@ a short section from another template in.
 
 ## Step 3b — Distill `SKILL.md`
 
+**Agent Skills compliance (check inline, no extra file to read):**
+
+- `name` must be `y2s-<slug>` — 1–64 chars, lowercase `a-z`/`0-9`/`-` only, no
+  leading/trailing hyphen, no `--`, and it must equal the skill's own directory
+  name (`y2s-<slug>/`). Verify `<slug>` against this when you pick it in Step 3.
+- `description` is 1–1024 chars and must state what the skill does *and* when to
+  use it — see the trigger-phrasing rule right below. Only `name` + `description`
+  load at agent startup, so this field alone decides whether the skill ever gets
+  read; don't undersell it.
+- Body stays well under ~500 lines / 5000 tokens — push bulk to `references/`.
+- `scripts/fetch_transcript.js` must stay listed in the generated `SKILL.md`'s file
+  tree (Step 6 already does this) and must not prompt interactively — it doesn't,
+  keep it that way if it's ever touched.
+- All `references/…` and `scripts/…` paths in the generated `SKILL.md` are relative
+  to that skill's own root, never absolute.
+
 Frontmatter (YAML):
 
 ```
